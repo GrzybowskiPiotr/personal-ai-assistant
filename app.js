@@ -1,19 +1,31 @@
 const { Telegraf } = require("telegraf");
-require("dotenv").config();
+const dotenv = require("dotenv");
+
+const envResult = dotenv.config();
+
+if (envResult.error) {
+  console.error("Błąd podczas ładowania pliku .env", envResult.error);
+  process.exit(1);
+}
 
 const botApiKey = process.env.TELEGRAM_BOT_TOKEN;
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+if (!botApiKey) {
+  console.error("Brak TELEGRAM_BOT_TOKEN w pliku .env");
+  process.exit(1);
+}
+
+const bot = new Telegraf(botApiKey);
 
 bot.command("start", (ctx) => {
   ctx.reply(
-    "Witaj! Jestem botem GrzybAI. Teraz robię za Echo. Napisz coś, a ja to powturzę"
+    "Witaj! Jestem botem GrzybAI. Teraz robię za Echo. Napisz coś, a ja to powtórzę"
   );
 });
 
 bot.on("text", (ctx) => {
-  const reciveMessage = ctx.message.text;
-  ctx.reply(`Napisałeś do mnie ${reciveMessage}`);
+  const receivedMessage = ctx.message.text;
+  ctx.reply(`Napisałeś do mnie: ${receivedMessage}`);
 });
 
 bot.catch((error, ctx) => {
