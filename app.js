@@ -1,32 +1,32 @@
 const { Telegraf } = require("telegraf");
 const dotenv = require("dotenv");
 const envResult = dotenv.config();
+// Import the OpenAI SDK to be able to send queries to the OpenAI API.
 const OpenAI = require("openai");
-// const { message } = require("telegraf/filters");
 
 if (envResult.error) {
-  console.error("Błąd podczas ładowania pliku .env", envResult.error);
+  console.error("Error while loading .env file", envResult.error);
   process.exit(1);
 }
 
-//Zaczytanie kluczy z zmiennej środowiskowej
+//Reading keys from environment variable
 const botApiKey = process.env.TELEGRAM_BOT_TOKEN;
 const openaiKey = process.env.OPENAI_API_KEY;
 
-//Walicaja kluczy
-if (!botApiKey || botApiKey.length === 0) {
-  console.error("Brak lub nieprawidłowy TELEGRAM_BOT_TOKEN w pliku .env");
+// Key validation
+if (!botApiKey) {
+  console.error("Missing or invalid TELEGRAM_BOT_TOKEN in .env file");
   process.exit(1);
 }
 
-if (!openaiKey || openaiKey === 0) {
-  console.log("Brak lub nieprawidłowy OPENAI_API_KEY w pliku .env");
+if (!openaiKey) {
+  console.log("Missing or invalid OPENAI_API_KEY in .env file");
   process.exit(1);
 }
 
 const openai = new OpenAI({ apiKey: openaiKey });
 
-// Funkcja do komunikacji z OpenAI
+// Function for communicating with OpenAI
 async function askChatText(text) {
   let replyMessage = "";
   if (typeof text === "string" && text.length > 0) {
@@ -46,23 +46,23 @@ async function askChatText(text) {
 
       replyMessage = completion.choices[0].message.content;
     } catch (error) {
-      console.error("Błąd wywołania OpenAI: ", error);
+      console.error("OpenAI response error: ", error);
       throw error;
     }
   }
   return replyMessage;
 }
 
-//tworzenie połaczenia do bota.
+// Initializing the Telegram bot using the Telegraf library
 const bot = new Telegraf(botApiKey);
 
-//rozurch bota.
+//Bot Startup
 
 bot.command("start", (ctx) => {
   ctx.reply("Witaj! Jestem botem GrzybAI.\n W jaki sposób mogę ci pomóc ?");
 });
 
-// Komenda wyłączania bota.
+//Bot stop command.
 bot.command("stop", (ctx) => {
   ctx.reply("Kończę działanie bota");
   bot.stop("SIGTERM");
@@ -75,7 +75,7 @@ bot.on("text", async (ctx) => {
     const replayText = await askChatText(receivedMessage);
     ctx.reply(replayText);
   } catch (error) {
-    console.error("Błąd w odpowiedzi bota: ", error);
+    console.error("Error in bot response: ", error);
     ctx.reply(
       "Przepraszam, wystąpił błąd podczas przetwarzania Twojej wiadomości. Spróbuj ponownie później."
     );
@@ -83,14 +83,14 @@ bot.on("text", async (ctx) => {
 });
 
 bot.catch((error, ctx) => {
-  console.log(`Wystąpił błąd dla ${ctx.updateType}`, error);
+  console.log(`An error occurred for ${ctx.updateType}`, error);
 });
 
 bot
   .launch()
-  .then(() => console.log("Bot został uruchomiony pomyślnie!"))
+  .then(() => console.log("The bot has been launched successfully!"))
   .catch((error) => {
-    console.error("Wystąpił błąd podczas uruchamiania bota", error);
+    console.error("An error occurred while launching the bot", error);
     process.exit(1);
   });
 
