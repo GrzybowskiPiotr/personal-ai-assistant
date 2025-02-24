@@ -68,7 +68,6 @@ bot.command("stop", (ctx) => {
   bot.stop("SIGTERM");
 });
 
-// Komenda startowa Bota.
 bot.on("text", async (ctx) => {
   const receivedMessage = ctx.message.text;
   try {
