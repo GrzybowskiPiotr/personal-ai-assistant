@@ -6,33 +6,33 @@ require("dotenv").config();
 const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
-  console.error("Brak importu klucza bazy danych mongo_uri");
+  console.error("No import of mongo_uri database key");
   process.exit(1);
 }
 
 async function connectToDB() {
   try {
     await mongoose.connect(MONGO_URI);
-    console.log("Połączono do bazy danych");
+    console.log("Connected to the database");
   } catch (error) {
-    console.error("Błąd połączenia do Atlas MongoDb: ", error);
+    console.error("Atlas MongoDb connection error: ", error);
     process.exit(1);
   }
 }
 
-async function saveMessage(sesionID, role, content) {
+async function saveMessage(sessionId, role, content) {
   try {
-    let sesion = await History.findOne({ sesionID });
+    let sesion = await History.findOne({ sessionId });
 
     // Is messages history exsists. If not initialization of new messages history.
     if (!sesion) {
-      sesion = new History({ sesionID, messages: [] });
+      sesion = new History({ sessionId, messages: [] });
     }
 
     sesion.messages.push({ role, content });
     await sesion.save();
   } catch (error) {
-    console.error("Błąd :", error);
+    console.error("Error while saving message :", error);
   }
 }
 
@@ -43,12 +43,12 @@ async function saveMessage(sesionID, role, content) {
 //   await saveMessage("12345", "assistant", "Mongdb to naza NoSql..");
 // });
 
-async function readMessages(sesionID) {
+async function readMessages(sessionId) {
   try {
-    let sesion = await History.findOne({ sesionID });
+    let sesion = await History.findOne({ sessionId });
 
     if (!sesion) {
-      console.log(`Brak historii dla sesji: ${sesionID}`);
+      console.log(`Brak historii dla sesji: ${sessionId}`);
       return [];
     }
 

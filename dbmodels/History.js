@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
-const historyShema = new mongoose.Schema({
-  sesionID: { type: String, required: true },
+const historySchema = new mongoose.Schema({
+  sessionId: { type: String, required: true },
   messages: [
     {
       role: { type: String, enum: ["user", "assistant"], required: true },
@@ -11,6 +11,6 @@ const historyShema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
 });
 
-const History = mongoose.model("History", historyShema, "messages_history");
+const History = mongoose.model("History", historySchema, "messages_history");
 
 module.exports = History;

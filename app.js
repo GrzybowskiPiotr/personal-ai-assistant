@@ -55,7 +55,6 @@ async function askChatText(text, sesionID) {
 
   if (typeof text === "string" && text.length > 0) {
     const tokenizer = encoding_for_model(model);
-
     let historySizeInTokens = tokenizer.encode(
       formatHistoryToString(historyMessages)
     ).length;
@@ -114,16 +113,16 @@ bot.command("stop", (ctx) => {
 
 bot.on("text", async (ctx) => {
   const receivedMessage = ctx.message.text;
-  const sesionId = ctx.from.id.toString();
+  const sessionId = ctx.from.id.toString();
   try {
-    const replayText = await askChatText(receivedMessage, sesionId);
+    const replayText = await askChatText(receivedMessage, sessionId);
     const assistantMessage = { role: "assistant", content: replayText.content };
     const sentedMessage = { role: "user", content: receivedMessage };
 
-    await saveMessage(sesionId, sentedMessage.role, sentedMessage.content);
+    await saveMessage(sessionId, sentedMessage.role, sentedMessage.content);
 
     await saveMessage(
-      sesionId,
+      sessionId,
       assistantMessage.role,
       assistantMessage.content
     );
