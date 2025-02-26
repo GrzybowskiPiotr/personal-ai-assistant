@@ -4,7 +4,15 @@ const envResult = dotenv.config();
 const { connectToDB, saveMessage, readMessages } = require("./dbConnect");
 // Import the OpenAI SDK to be able to send queries to the OpenAI API.
 const OpenAI = require("openai");
+// Import mongoose for closing connection to DB;
 const { default: mongoose } = require("mongoose");
+
+//Import library for conwering message to tokens;
+const { encoding_for_model } = require("@dqbd/tiktoken");
+
+//Maximum size of one request. History and qestion to AI API;
+const maxTokensInRequest = 3400;
+const model = "gpt-4o-mini";
 
 if (envResult.error) {
   console.error("Error while loading .env file", envResult.error);
@@ -32,6 +40,13 @@ connectToDB();
 
 const openai = new OpenAI({ apiKey: openaiKey });
 
+function formatHistoryToString(history) {
+  let formatedHistory = history
+    .map((item) => `${item.role} : ${item.content}`)
+    .join();
+  return formatedHistory;
+}
+
 // Function for communicating with OpenAI
 async function askChatText(text, sesionID) {
   const historyMessages = await readMessages(sesionID);
@@ -39,9 +54,29 @@ async function askChatText(text, sesionID) {
   let replyMessage = "";
 
   if (typeof text === "string" && text.length > 0) {
+    const tokenizer = encoding_for_model(model);
+
+    let historySizeInTokens = tokenizer.encode(
+      formatHistoryToString(historyMessages)
+    ).length;
+
+    let messageInTokens = tokenizer.encode(text).length;
+
+    if (historySizeInTokens + messageInTokens >= maxTokensInRequest) {
+      while (historySizeInTokens + messageInTokens >= maxTokensInRequest) {
+        historyMessages.splice(0, 1);
+        historySizeInTokens = tokenizer.encode(
+          formatHistoryToString(historyMessages)
+        ).length;
+        messageInTokens = tokenizer.encode(text).length;
+      }
+      console.log("Token limit reach. Redusing history in request.");
+    }
+    tokenizer.free();
+
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: model,
         messages: [
           {
             role: "system",
@@ -51,7 +86,6 @@ async function askChatText(text, sesionID) {
           { role: "user", content: text },
         ],
         temperature: 0.3,
-        max_tokens: 100,
       });
 
       replyMessage = completion.choices[0].message;

@@ -1,6 +1,7 @@
 {
   "type": "commonjs",
   "dependencies": {
+    "@dqbd/tiktoken": "^1.0.20",
     "dotenv": "^16.4.7",
     "mongoose": "^8.10.1",
     "nodemon": "^3.1.9",

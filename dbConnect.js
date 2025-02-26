@@ -29,14 +29,6 @@ async function saveMessage(sesionID, role, content) {
       sesion = new History({ sesionID, messages: [] });
     }
 
-    // max history size check
-    let maxHistorySize = 15;
-    let actualHistorySize = sesion.messages.length || 0;
-
-    if (actualHistorySize >= maxHistorySize) {
-      sesion.messages.splice(0, actualHistorySize - maxHistorySize);
-    }
-
     sesion.messages.push({ role, content });
     await sesion.save();
   } catch (error) {
