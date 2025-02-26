@@ -1,8 +1,10 @@
 const { Telegraf } = require("telegraf");
 const dotenv = require("dotenv");
 const envResult = dotenv.config();
+const { connectToDB, saveMessage, readMessages } = require("./dbConnect");
 // Import the OpenAI SDK to be able to send queries to the OpenAI API.
 const OpenAI = require("openai");
+const { default: mongoose } = require("mongoose");
 
 if (envResult.error) {
   console.error("Error while loading .env file", envResult.error);
@@ -24,11 +26,18 @@ if (!openaiKey) {
   process.exit(1);
 }
 
+//Connect to DB function invoke
+
+connectToDB();
+
 const openai = new OpenAI({ apiKey: openaiKey });
 
 // Function for communicating with OpenAI
-async function askChatText(text) {
+async function askChatText(text, sesionID) {
+  const historyMessages = await readMessages(sesionID);
+
   let replyMessage = "";
+
   if (typeof text === "string" && text.length > 0) {
     try {
       const completion = await openai.chat.completions.create({
@@ -38,13 +47,14 @@ async function askChatText(text) {
             role: "system",
             content: "You are chatBot named GrzybekAIbot. Use Polish language",
           },
+          ...historyMessages,
           { role: "user", content: text },
         ],
-        temperature: 0.5,
-        max_tokens: 50,
+        temperature: 0.3,
+        max_tokens: 100,
       });
 
-      replyMessage = completion.choices[0].message.content;
+      replyMessage = completion.choices[0].message;
     } catch (error) {
       console.error("OpenAI response error: ", error);
       throw error;
@@ -70,9 +80,21 @@ bot.command("stop", (ctx) => {
 
 bot.on("text", async (ctx) => {
   const receivedMessage = ctx.message.text;
+  const sesionId = ctx.from.id.toString();
   try {
-    const replayText = await askChatText(receivedMessage);
-    ctx.reply(replayText);
+    const replayText = await askChatText(receivedMessage, sesionId);
+    const assistantMessage = { role: "assistant", content: replayText.content };
+    const sentedMessage = { role: "user", content: receivedMessage };
+
+    await saveMessage(sesionId, sentedMessage.role, sentedMessage.content);
+
+    await saveMessage(
+      sesionId,
+      assistantMessage.role,
+      assistantMessage.content
+    );
+
+    ctx.reply(assistantMessage.content);
   } catch (error) {
     console.error("Error in bot response: ", error);
     ctx.reply(
@@ -93,5 +115,16 @@ bot
     process.exit(1);
   });
 
-process.once("SIGINT", () => bot.stop("SIGINT"));
-process.once("SIGTERM", () => bot.stop("SIGTERM"));
+process.once("SIGINT", async () => {
+  await mongoose.connection.close();
+  bot.stop("SIGINT");
+  console.log("Zamknięto połączenie do bazy danych i zatrzymano bota");
+  process.exit(0);
+});
+
+process.once("SIGTERM", async () => {
+  await mongoose.connection.close();
+  bot.stop("SIGTERM");
+  console.log("Zamknięto połączenie do bazy danych i zatrzymano bota");
+  process.exit(0);
+});

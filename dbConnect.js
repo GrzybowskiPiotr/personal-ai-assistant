@@ -1,6 +1,5 @@
 const { default: mongoose } = require("mongoose");
 const History = require("./dbmodels/History");
-const { message } = require("telegraf/filters");
 
 require("dotenv").config();
 
@@ -10,7 +9,7 @@ if (!MONGO_URI) {
   console.error("Brak importu klucza bazy danych mongo_uri");
   process.exit(1);
 }
-//połączenie do bazy
+
 async function connectToDB() {
   try {
     await mongoose.connect(MONGO_URI);
@@ -25,27 +24,32 @@ async function saveMessage(sesionID, role, content) {
   try {
     let sesion = await History.findOne({ sesionID });
 
+    // Is messages history exsists. If not initialization of new messages history.
     if (!sesion) {
       sesion = new History({ sesionID, messages: [] });
     }
-    console.log("Wielkość tablicy wiadomości");
-    console.log(sesion.messages.length);
+
+    // max history size check
+    let maxHistorySize = 15;
+    let actualHistorySize = sesion.messages.length || 0;
+
+    if (actualHistorySize >= maxHistorySize) {
+      sesion.messages.splice(0, actualHistorySize - maxHistorySize);
+    }
 
     sesion.messages.push({ role, content });
     await sesion.save();
-
-    console.log("Wiadomość zapisana");
   } catch (error) {
     console.error("Błąd :", error);
   }
 }
 
-//testy użycia funkcji
+//function tests
 
-connectToDB().then(async () => {
-  await saveMessage("12345", "user", "Jak działa mongoDB?");
-  await saveMessage("12345", "assistant", "Mongdb to naza NoSql..");
-});
+// connectToDB().then(async () => {
+//   await saveMessage("12345", "user", "Jak działa mongoDB?");
+//   await saveMessage("12345", "assistant", "Mongdb to naza NoSql..");
+// });
 
 async function readMessages(sesionID) {
   try {
@@ -53,19 +57,13 @@ async function readMessages(sesionID) {
 
     if (!sesion) {
       console.log(`Brak historii dla sesji: ${sesionID}`);
-      return null;
+      return [];
     }
 
     return sesion.messages;
   } catch (error) {
-    console.error("Błą podczas odczytu historii", error);
+    console.error("Błąd podczas odczytu historii", error);
   }
 }
 
-setTimeout(async () => {
-  const messages = await readMessages("12345");
-  console.log("Wielkość tablicy wiadomości");
-
-  console.log(`zapamiętana konwersacja ${messages}`);
-  process.exit(1);
-}, 1500);
+module.exports = { connectToDB, saveMessage, readMessages };
