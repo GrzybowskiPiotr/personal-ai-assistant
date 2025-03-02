@@ -9,11 +9,10 @@ const { default: mongoose, model } = require("mongoose");
 
 //Import library for conwering message to tokens;
 const { encoding_for_model } = require("@dqbd/tiktoken");
-const { message } = require("telegraf/filters");
 
 //Maximum size of one request. History and qestion to AI API;
 const maxTokensInRequest = 3400;
-const defaultModel = "gpt-4o-mini";
+const openAIModel = "gpt-4o-mini";
 
 if (envResult.error) {
   console.error("Error while loading .env file", envResult.error);
@@ -41,30 +40,6 @@ connectToDB();
 
 const openai = new OpenAI({ apiKey: openaiKey });
 
-// async function imageInterpreter() {
-//   const response = await openai.chat.completions.create({
-//     model: defaultModel,
-//     messages: [
-//       {
-//         role: "user",
-//         content: [
-//           { type: "text", text: "Whats's in this image?" },
-//           {
-//             type: "image_url",
-//             image_url: {
-//               url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-//             },
-//           },
-//         ],
-//       },
-//     ],
-//     store: true,
-//   });
-//   console.log(response.choices[0]);
-// }
-
-// imageInterpreter();
-
 function formatHistoryToString(history) {
   let formatedHistory = history
     .map((item) => `${item.role} : ${item.content}`)
@@ -85,7 +60,7 @@ function validateIsFileImage(fileId) {
 async function processImagesAI(fileUrl, instructions) {
   try {
     const response = await openai.chat.completions.create({
-      model: defaultModel,
+      model: openAIModel,
       messages: [
         {
           role: "user",
@@ -108,8 +83,12 @@ async function processImagesAI(fileUrl, instructions) {
 // Function for communicating with OpenAI
 // query structure {text: "exaple text", imageUrl: "url string to file send from telegram"}
 async function askChat(query, sessionID) {
-  if (!query) return new Error("Brak zapytania 'query'");
-  if (!sessionID) return new Error("Brak sessionID");
+  if (!query) {
+    throw new Error("Brak zapytania 'query'");
+  }
+  if (!sessionID) {
+    throw new Error("Brak sessionID");
+  }
 
   let text = query.text ?? null;
   let imageUrl = query.imageUrl ?? null;
@@ -117,17 +96,12 @@ async function askChat(query, sessionID) {
   const historyMessages = await readMessages(sessionID);
 
   let replyMessage = "";
-  const tokenizer = encoding_for_model(defaultModel);
+  const tokenizer = encoding_for_model(openAIModel);
   let historySizeInTokens = tokenizer.encode(
     formatHistoryToString(historyMessages)
   ).length;
 
   let messageInTokens = tokenizer.encode(text).length;
-
-  console.log(
-    "Ilość tokenów przekazanych historii: ",
-    historySizeInTokens + messageInTokens
-  );
 
   if (historySizeInTokens + messageInTokens >= maxTokensInRequest) {
     while (historySizeInTokens + messageInTokens >= maxTokensInRequest) {
@@ -145,7 +119,7 @@ async function askChat(query, sessionID) {
   if (text && typeof text === "string" && text.length > 0) {
     try {
       const completion = await openai.chat.completions.create({
-        model: defaultModel,
+        model: openAIModel,
         messages: [
           {
             role: "system",
@@ -167,7 +141,6 @@ async function askChat(query, sessionID) {
 
   // image query usage
   if (imageUrl && imageUrl.length > 0) {
-    console.log("przetwarzam obraz");
     const requestAction = query.text;
     replyMessage = await processImagesAI(imageUrl, requestAction);
   }
