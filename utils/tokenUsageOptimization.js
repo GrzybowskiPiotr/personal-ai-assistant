@@ -1,6 +1,6 @@
 const formatHistoryToString = require("./formatHistoryToString");
 
-module.exports = function tokenUsageOptymalization(
+module.exports = function tokenUsageOptimization(
   historyMessages,
   newMessage,
   maxTokens,

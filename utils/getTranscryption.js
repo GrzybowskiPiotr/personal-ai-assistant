@@ -12,7 +12,7 @@ module.exports = async function getTranscryption(
       model: audioAiModel,
     });
   } catch (error) {
-    console.error("Błąd transkrypcji pliku: " + error);
+    console.error("Błąd przy próbie transkrypcji pliku przez AI: " + error);
   }
   return transcription;
 };

@@ -1,9 +1,9 @@
-const fs = require("fs");
 const { Telegraf } = require("telegraf");
 const dotenv = require("dotenv");
 const envResult = dotenv.config();
+const fs = require("fs");
 const getTranscryption = require("./utils/getTranscryption.js");
-const tokenUsageOptymalization = require("./utils/tokenUsageOptymalization.js");
+const tokenUsageOptimization = require("./utils/tokenUsageOptimization.js");
 const validateIsFileImage = require("./utils/validateIsFileImage.js");
 const processImagesAI = require("./proc/processImagesAI.js");
 const processTextAi = require("./proc/processTextAi.js");
@@ -15,13 +15,13 @@ const {
 } = require("./divers/dbConnect.js");
 // Import the OpenAI SDK to be able to send queries to the OpenAI API.
 const OpenAI = require("openai");
-// Import mongoose for closing connection to DB;
+// Import mongoose for closing connection to DB.
 const { default: mongoose } = require("mongoose");
 
-//Import library for conwering message to tokens;
+//Import library for conwering message to tokens.
 const { encoding_for_model } = require("@dqbd/tiktoken");
 
-//Maximum size of one request. History and qestion to AI API;
+//Maximum size of one request. History and qestion to AI API.
 const maxTokensInRequest = 3400;
 const openAIModel = "gpt-4o-mini";
 const audioAiModel = "whisper-1";
@@ -31,22 +31,22 @@ if (envResult.error) {
   process.exit(1);
 }
 
-//Reading keys from environment variable
+//Reading keys from environment variable.
 const botApiKey = process.env.TELEGRAM_BOT_TOKEN;
 const openaiKey = process.env.OPENAI_API_KEY;
 
-//Bot API Key validation
+//Bot API Key validation.
 if (!botApiKey) {
   console.error("Missing or invalid TELEGRAM_BOT_TOKEN in .env file");
   process.exit(1);
 }
-//AI API Key validation
+//AI API Key validation.
 if (!openaiKey) {
   console.log("Missing or invalid OPENAI_API_KEY in .env file");
   process.exit(1);
 }
 
-//Connect to DB function invoke
+//Connect to DB function invoke.
 
 connectToDB();
 
@@ -54,7 +54,7 @@ const openai = new OpenAI({ apiKey: openaiKey });
 
 // Primary function for interacting with OpenAI.
 
-// query structure {text: "instruction for AI model", imageUrl: "url string to file send from telegram"}
+// query structure {text: "instruction for AI model", imageUrl: "url string to file send from telegram"}.
 
 async function askChat(query, sessionID) {
   if (!query) {
@@ -71,11 +71,11 @@ async function askChat(query, sessionID) {
 
   let replyMessage = "";
 
-  //token optymalization
+  //Token optymalization.
 
   const tokenizer = encoding_for_model(openAIModel);
 
-  const optimizedHistory = tokenUsageOptymalization(
+  const optimizedHistory = tokenUsageOptimization(
     historyMessages,
     text,
     maxTokensInRequest,
@@ -84,7 +84,7 @@ async function askChat(query, sessionID) {
 
   tokenizer.free();
 
-  //text query usage
+  //Text query usage.
   replyMessage = await processTextAi(
     text,
     openai,
@@ -92,7 +92,7 @@ async function askChat(query, sessionID) {
     optimizedHistory
   );
 
-  // image query usage
+  //Image query usage.
   if (imageUrl && imageUrl.length > 0) {
     const requestAction = query.text;
     replyMessage = await processImagesAI(
@@ -106,10 +106,10 @@ async function askChat(query, sessionID) {
   return replyMessage;
 }
 
-// Initializing the Telegram bot using the Telegraf library
+//Initializing the Telegram bot using the Telegraf library.
 const bot = new Telegraf(botApiKey);
 
-//Bot Startup
+//Bot Startup.
 
 bot.command("start", (ctx) => {
   ctx.reply("Witaj! Jestem botem GrzybAI.\n W jaki sposób mogę ci pomóc ?");
@@ -252,9 +252,7 @@ bot.on("voice", async (ctx) => {
   }
 
   try {
-    // console.log(transText.text);
     const replayText = await askChat({ text: transText.text }, sessionID);
-    // console.log(replayText.content);
     ctx.reply(replayText.content);
   } catch (error) {
     console.error("Błąd odpowiedzi z AI: " + error);

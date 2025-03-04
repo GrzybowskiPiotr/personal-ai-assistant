@@ -31,11 +31,11 @@ async function converted_audio(inputPath, outputDir, fileName, format) {
 module.exports = async function voiceMessageFileConverter(fileLink, fileId) {
   try {
     // Create temp and output directories if they don't exist
-    //dose temp folder exsists
+    //does temp folder exsists
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
-    //dose output folder exsists
+    //does output folder exsists
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
@@ -66,7 +66,7 @@ module.exports = async function voiceMessageFileConverter(fileLink, fileId) {
     );
     return convertedFilePath;
   } catch (error) {
-    console.log("Error in convertion process.." + error);
+    console.error("Error in convertion process.." + error);
     throw error;
   }
 };

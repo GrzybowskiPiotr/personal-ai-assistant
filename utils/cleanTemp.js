@@ -9,15 +9,11 @@ module.exports = function cleanTemp(dirForCleanUp) {
     if (files.length > 0) {
       files.forEach((file) => {
         const filePath = path.join(dirForCleanUp, file);
-        let isDirectory = false;
         fs.stat(filePath, (err, stats) => {
           if (err) {
             console.error("Błą sprawdzania pliku: ", err);
           }
-          if (stats.isDirectory()) {
-            isDirectory = true;
-          }
-          if (!isDirectory) {
+          if (!stats.isDirectory()) {
             fs.unlink(filePath, (err) => {
               if (err) {
                 console.error("Błąd kasowania plików temp: ", err);
