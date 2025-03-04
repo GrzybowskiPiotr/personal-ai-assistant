@@ -1,16 +1,22 @@
+const fs = require("fs");
 const { Telegraf } = require("telegraf");
 const dotenv = require("dotenv");
 const envResult = dotenv.config();
+const getTranscryption = require("./utils/getTranscryption.js");
 const tokenUsageOptymalization = require("./utils/tokenUsageOptymalization.js");
 const validateIsFileImage = require("./utils/validateIsFileImage.js");
 const processImagesAI = require("./proc/processImagesAI.js");
 const processTextAi = require("./proc/processTextAi.js");
 const voiceMessageFileConverter = require("./utils/voiceMessageFileConverter.js");
-const { connectToDB, saveMessage, readMessages } = require("./dbConnect");
+const {
+  connectToDB,
+  saveMessage,
+  readMessages,
+} = require("./divers/dbConnect.js");
 // Import the OpenAI SDK to be able to send queries to the OpenAI API.
 const OpenAI = require("openai");
 // Import mongoose for closing connection to DB;
-const { default: mongoose, model } = require("mongoose");
+const { default: mongoose } = require("mongoose");
 
 //Import library for conwering message to tokens;
 const { encoding_for_model } = require("@dqbd/tiktoken");
@@ -96,6 +102,7 @@ async function askChat(query, sessionID) {
       openAIModel
     );
   }
+
   return replyMessage;
 }
 
@@ -224,12 +231,34 @@ bot.on("callback_query", async (ctx) => {
 });
 
 bot.on("voice", async (ctx) => {
-  const voiceMessage = ctx.message.voice;
-  console.log("Odebrałem wiadomość głosową.");
+  let transText = "brak textu";
+  const sessionID = ctx.from.id.toString();
+  try {
+    const voiceMessage = ctx.message.voice;
+    const fileId = voiceMessage.file_id;
+    const recivedfile = await ctx.telegram.getFileLink(fileId);
+    const fileLink = recivedfile.href;
 
-  const recivedfile = await ctx.telegram.getFileLink(voiceMessage.file_id);
-  const fileLink = recivedfile.href;
-  voiceMessageFileConverter(fileLink);
+    const convertedFilePath = await voiceMessageFileConverter(fileLink, fileId);
+    if (!convertedFilePath || !fs.existsSync(convertedFilePath)) {
+      throw new Error(
+        "Plik konwertowany nie istnieje lub nie został utworzony."
+      );
+    }
+
+    transText = await getTranscryption(convertedFilePath, audioAiModel);
+  } catch (error) {
+    console.error("Error processing voice message " + error);
+  }
+
+  try {
+    // console.log(transText.text);
+    const replayText = await askChat({ text: transText.text }, sessionID);
+    // console.log(replayText.content);
+    ctx.reply(replayText.content);
+  } catch (error) {
+    console.error("Błąd odpowiedzi z AI: " + error);
+  }
 });
 
 bot.catch((error, ctx) => {
