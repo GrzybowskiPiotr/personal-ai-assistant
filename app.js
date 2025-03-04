@@ -1,87 +1,61 @@
 const { Telegraf } = require("telegraf");
 const dotenv = require("dotenv");
 const envResult = dotenv.config();
-const { connectToDB, saveMessage, readMessages } = require("./dbConnect");
+const fs = require("fs");
+const getTranscryption = require("./utils/getTranscryption.js");
+const tokenUsageOptimization = require("./utils/tokenUsageOptimization.js");
+const validateIsFileImage = require("./utils/validateIsFileImage.js");
+const processImagesAI = require("./proc/processImagesAI.js");
+const processTextAi = require("./proc/processTextAi.js");
+const voiceMessageFileConverter = require("./utils/voiceMessageFileConverter.js");
+const {
+  connectToDB,
+  saveMessage,
+  readMessages,
+} = require("./divers/dbConnect.js");
 // Import the OpenAI SDK to be able to send queries to the OpenAI API.
 const OpenAI = require("openai");
-// Import mongoose for closing connection to DB;
-const { default: mongoose, model } = require("mongoose");
+// Import mongoose for closing connection to DB.
+const { default: mongoose } = require("mongoose");
 
-//Import library for conwering message to tokens;
+//Import library for conwering message to tokens.
 const { encoding_for_model } = require("@dqbd/tiktoken");
 
-//Maximum size of one request. History and qestion to AI API;
+//Maximum size of one request. History and qestion to AI API.
 const maxTokensInRequest = 3400;
 const openAIModel = "gpt-4o-mini";
+const audioAiModel = "whisper-1";
 
 if (envResult.error) {
   console.error("Error while loading .env file", envResult.error);
   process.exit(1);
 }
 
-//Reading keys from environment variable
+//Reading keys from environment variable.
 const botApiKey = process.env.TELEGRAM_BOT_TOKEN;
 const openaiKey = process.env.OPENAI_API_KEY;
 
-// Key validation
+//Bot API Key validation.
 if (!botApiKey) {
   console.error("Missing or invalid TELEGRAM_BOT_TOKEN in .env file");
   process.exit(1);
 }
-
+//AI API Key validation.
 if (!openaiKey) {
   console.log("Missing or invalid OPENAI_API_KEY in .env file");
   process.exit(1);
 }
 
-//Connect to DB function invoke
+//Connect to DB function invoke.
 
 connectToDB();
 
 const openai = new OpenAI({ apiKey: openaiKey });
 
-function formatHistoryToString(history) {
-  let formatedHistory = history
-    .map((item) => `${item.role} : ${item.content}`)
-    .join();
-  return formatedHistory;
-}
+// Primary function for interacting with OpenAI.
 
-function validateIsFileImage(fileId) {
-  const fileFormat = fileId.file_path.split(".").pop();
+// query structure {text: "instruction for AI model", imageUrl: "url string to file send from telegram"}.
 
-  if (!["jpg", "jpeg", "png"].includes(fileFormat)) {
-    ctx.reply("Błędny format pliku. Umiem obsłurzyć tylko pliki JPG lub PNG");
-    return false;
-  }
-  return true;
-}
-
-async function processImagesAI(fileUrl, instructions) {
-  try {
-    const response = await openai.chat.completions.create({
-      model: openAIModel,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: instructions },
-            { type: "image_url", image_url: { url: fileUrl } },
-          ],
-        },
-      ],
-      temperature: 0.3,
-      store: true,
-    });
-
-    return response.choices[0].message.content;
-  } catch (error) {
-    console.error("Błąd przetwarzania obrazu przez AI: ", error);
-  }
-}
-
-// Function for communicating with OpenAI
-// query structure {text: "exaple text", imageUrl: "url string to file send from telegram"}
 async function askChat(query, sessionID) {
   if (!query) {
     throw new Error("Brak zapytania 'query'");
@@ -96,61 +70,46 @@ async function askChat(query, sessionID) {
   const historyMessages = await readMessages(sessionID);
 
   let replyMessage = "";
+
+  //Token optymalization.
+
   const tokenizer = encoding_for_model(openAIModel);
-  let historySizeInTokens = tokenizer.encode(
-    formatHistoryToString(historyMessages)
-  ).length;
 
-  let messageInTokens = tokenizer.encode(text).length;
+  const optimizedHistory = tokenUsageOptimization(
+    historyMessages,
+    text,
+    maxTokensInRequest,
+    tokenizer
+  );
 
-  if (historySizeInTokens + messageInTokens >= maxTokensInRequest) {
-    while (historySizeInTokens + messageInTokens >= maxTokensInRequest) {
-      historyMessages.splice(0, 1);
-      historySizeInTokens = tokenizer.encode(
-        formatHistoryToString(historyMessages)
-      ).length;
-      messageInTokens = tokenizer.encode(text).length;
-    }
-    console.log("Token limit reach. Redusing history in request.");
-  }
   tokenizer.free();
 
-  // text query usage
-  if (text && typeof text === "string" && text.length > 0) {
-    try {
-      const completion = await openai.chat.completions.create({
-        model: openAIModel,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are chatBot named GrzybekAIbot. Use Polish language. Nie używaj frazy 'Na podstawie wcześniejszych informacji' oraz 'z opisu kótry podałeś';",
-          },
-          ...historyMessages,
-          { role: "user", content: text },
-        ],
-        temperature: 0.3,
-      });
+  //Text query usage.
+  replyMessage = await processTextAi(
+    text,
+    openai,
+    openAIModel,
+    optimizedHistory
+  );
 
-      replyMessage = completion.choices[0].message;
-    } catch (error) {
-      console.error("OpenAI response error: ", error);
-      throw error;
-    }
-  }
-
-  // image query usage
+  //Image query usage.
   if (imageUrl && imageUrl.length > 0) {
     const requestAction = query.text;
-    replyMessage = await processImagesAI(imageUrl, requestAction);
+    replyMessage = await processImagesAI(
+      imageUrl,
+      requestAction,
+      openai,
+      openAIModel
+    );
   }
+
   return replyMessage;
 }
 
-// Initializing the Telegram bot using the Telegraf library
+//Initializing the Telegram bot using the Telegraf library.
 const bot = new Telegraf(botApiKey);
 
-//Bot Startup
+//Bot Startup.
 
 bot.command("start", (ctx) => {
   ctx.reply("Witaj! Jestem botem GrzybAI.\n W jaki sposób mogę ci pomóc ?");
@@ -163,7 +122,6 @@ bot.command("stop", (ctx) => {
 });
 
 bot.on("text", async (ctx) => {
-  console.log("text mode");
   const receivedMessage = ctx.message.text;
   const sessionId = ctx.from.id.toString();
   try {
@@ -189,8 +147,6 @@ bot.on("text", async (ctx) => {
 });
 
 bot.on("photo", async (ctx) => {
-  console.log("Photo mode");
-
   const sessionId = ctx.from.id.toString();
 
   try {
@@ -271,6 +227,35 @@ bot.on("callback_query", async (ctx) => {
   } catch (error) {
     console.error("Błąd obsługi callback_query: ", error);
     ctx.reply("Wystąpił błąd.Spróbuj ponownie.");
+  }
+});
+
+bot.on("voice", async (ctx) => {
+  let transText = "brak textu";
+  const sessionID = ctx.from.id.toString();
+  try {
+    const voiceMessage = ctx.message.voice;
+    const fileId = voiceMessage.file_id;
+    const recivedfile = await ctx.telegram.getFileLink(fileId);
+    const fileLink = recivedfile.href;
+
+    const convertedFilePath = await voiceMessageFileConverter(fileLink, fileId);
+    if (!convertedFilePath || !fs.existsSync(convertedFilePath)) {
+      throw new Error(
+        "Plik konwertowany nie istnieje lub nie został utworzony."
+      );
+    }
+
+    transText = await getTranscryption(convertedFilePath, audioAiModel);
+  } catch (error) {
+    console.error("Error processing voice message " + error);
+  }
+
+  try {
+    const replayText = await askChat({ text: transText.text }, sessionID);
+    ctx.reply(replayText.content);
+  } catch (error) {
+    console.error("Błąd odpowiedzi z AI: " + error);
   }
 });
 
