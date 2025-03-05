@@ -21,9 +21,8 @@ const OpenAI = require("openai");
 // Import mongoose for closing connection to DB.
 const { default: mongoose } = require("mongoose");
 
-//Import library for conwering message to tokens.
+//Import library for conwerting message to tokens.
 const { encoding_for_model } = require("@dqbd/tiktoken");
-const { default: axios } = require("axios");
 
 //Maximum size of one request. History and qestion to AI API.
 const maxTokensInRequest = 3400;
@@ -61,7 +60,7 @@ const openai = new OpenAI({ apiKey: openaiKey });
 
 // query structure {text: "instruction for AI model", imageUrl: "url string to file send from telegram"}.
 
-async function askChat(query, sessionID) {
+async function askChat(query, sessionID, ctx) {
   if (!query) {
     throw new Error("Brak zapytania 'query'");
   }
@@ -135,14 +134,13 @@ async function askChat(query, sessionID) {
           size: instructionObj.size || "256x256",
         });
 
-        //toDo implement passing image only to telegram bot.
         const url = imageUrlFromAI.data[0].url;
-        console.log(imageUrlFromAI.data[0].url);
 
         //Downloading image to temp.
-        saveImageFromUrlToTemp(url);
+        const imagePath = await saveImageFromUrlToTemp(url);
 
-        replyMessage.content = imageUrlFromAI.data[0].url;
+        replyMessage.content = { image: imagePath };
+
         return replyMessage;
       }
     } catch (error) {
@@ -171,19 +169,29 @@ bot.on("text", async (ctx) => {
   const receivedMessage = ctx.message.text;
   const sessionId = ctx.from.id.toString();
   try {
-    const replayText = await askChat({ text: receivedMessage }, sessionId);
+    const replayText = await askChat({ text: receivedMessage }, sessionId, ctx);
     const sentedMessage = { role: "user", content: receivedMessage };
     const assistantMessage = { role: "assistant", content: replayText.content };
 
     await saveMessage(sessionId, sentedMessage.role, sentedMessage.content);
 
-    await saveMessage(
-      sessionId,
-      assistantMessage.role,
-      assistantMessage.content
-    );
+    if (typeof replayText.content === "string") {
+      await saveMessage(
+        sessionId,
+        assistantMessage.role,
+        assistantMessage.content
+      );
 
-    ctx.reply(assistantMessage.content);
+      ctx.reply(assistantMessage.content);
+    } else if (
+      typeof replayText.content === "object" &&
+      replayText.content.image
+    ) {
+      async () => {
+        await ctx.replyWithPhoto({ source: replayText.content.image });
+        ctx.reply("Oto wygenerowany obraz. Jak ci się podoba ?");
+      };
+    }
   } catch (error) {
     console.error("Error in bot response: ", error);
     ctx.reply(
