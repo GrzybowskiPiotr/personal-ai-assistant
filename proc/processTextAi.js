@@ -10,17 +10,17 @@ const imageGenerationPrompt = `If the user requests an image generation:
    - "command": Always "generate image"
    - "description": Exact, verbatim user image description
    - "quantity": Numeric value for image count
-   - "quality" : for better qulity set "hd", default : "standard".
+   - "quality" : for better quality set "hd", default : "standard".
    - "size" : (default small - 256x256), (medium - 512x512), (large :  1024x1024). 
    - Optional "error": Include if input is invalid
 
 Response Format:
 {
     "command": "generate image",
-    "description": "[Exact user description in engilsh]",
+    "description": "[Exact user description in English]",
     "quantity": [Number of images, default 1],
-    "quality" : [qulity of image if user provided in request, if user did note provided, set "standard"],
-    "size" : [size of image if user provided in request. if user did not provided, set "256x256"]
+    "quality" : [quality of image if user defined in request, if user did note defined, set "standard"],
+    "size" : [size of image if user defined in request. if user did not defined, set "256x256"]
     "error": "[Optional error message]"
 }
 
@@ -36,7 +36,7 @@ Valid Inputs:
 }
 
 2. "Generate 3 fantasy-style dragon illustrations in hd quality medium size."
-   -> {"command": "generate image", "description": "fantasy-style dragon illustrations", "quantity": 3,"quantity": 3,
+   -> {"command": "generate image", "description": "fantasy-style dragon illustrations", "quantity": 3,
     "quality": "hd",
     "size": "512x512"}
 

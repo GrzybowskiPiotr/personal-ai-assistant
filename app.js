@@ -21,7 +21,7 @@ const OpenAI = require("openai");
 // Import mongoose for closing connection to DB.
 const { default: mongoose } = require("mongoose");
 
-//Import library for conwerting message to tokens.
+//Import library for converting message to tokens.
 const { encoding_for_model } = require("@dqbd/tiktoken");
 
 //Maximum size of one request. History and qestion to AI API.

@@ -8,7 +8,7 @@ module.exports = async function saveImageFromUrlToTemp(imageUrl, ctx) {
 
   if (!fs.existsSync(tempFolder)) {
     console.log(
-      "Tempolary folder for images does not exsists. Creating new one."
+      "Temporary folder for images does not exists. Creating new one."
     );
     fs.mkdirSync(tempFolder, { recursive: true });
   }
