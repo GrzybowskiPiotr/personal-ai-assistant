@@ -1,7 +1,9 @@
+const axios = require("axios");
 const { Telegraf } = require("telegraf");
 const dotenv = require("dotenv");
 const envResult = dotenv.config();
 const fs = require("fs");
+const path = require("path");
 const getTranscryption = require("./utils/getTranscryption.js");
 const tokenUsageOptimization = require("./utils/tokenUsageOptimization.js");
 const validateIsFileImage = require("./utils/validateIsFileImage.js");
@@ -13,6 +15,7 @@ const {
   saveMessage,
   readMessages,
 } = require("./divers/dbConnect.js");
+const saveImageFromUrlToTemp = require("./utils/saveImageFromUrlToTemp.js");
 // Import the OpenAI SDK to be able to send queries to the OpenAI API.
 const OpenAI = require("openai");
 // Import mongoose for closing connection to DB.
@@ -20,11 +23,13 @@ const { default: mongoose } = require("mongoose");
 
 //Import library for conwering message to tokens.
 const { encoding_for_model } = require("@dqbd/tiktoken");
+const { default: axios } = require("axios");
 
 //Maximum size of one request. History and qestion to AI API.
 const maxTokensInRequest = 3400;
 const openAIModel = "gpt-4o-mini";
 const audioAiModel = "whisper-1";
+const imageGenerationModel = "dall-e-2";
 
 if (envResult.error) {
   console.error("Error while loading .env file", envResult.error);
@@ -102,7 +107,48 @@ async function askChat(query, sessionID) {
       openAIModel
     );
   }
+  //Image generation request usage.
 
+  const strictJsonRegexp =
+    /^\s*\{\s*"command"\s*:\s*"generate image"\s*,\s*"description"\s*:\s*"[^"]*"\s*,\s*"quantity"\s*:\s*\d+\s*(?:,\s*"quality"\s*:\s*"[^"]*")?\s*(?:,\s*"size"\s*:\s*"[^"]*")?\s*(?:,\s*"error"\s*:\s*"[^"]*")?\s*\}\s*$/;
+  const regExp = new RegExp(strictJsonRegexp);
+
+  const content = replyMessage.content;
+
+  if (regExp.test(content)) {
+    console.log("Żądanie generowania obrazu");
+    try {
+      //Response text formating.
+      const JSONString = content.split("+")[0];
+      const instructionObj = JSON.parse(JSONString);
+
+      if (instructionObj.error) {
+        throw new Error(instructionObj.error);
+      }
+
+      if (instructionObj && !instructionObj.error) {
+        const imageUrlFromAI = await openai.images.generate({
+          model: imageGenerationModel,
+          prompt: instructionObj.description,
+          n: instructionObj.quantity || 1,
+          quality: instructionObj.quality || "standard",
+          size: instructionObj.size || "256x256",
+        });
+
+        //toDo implement passing image only to telegram bot.
+        const url = imageUrlFromAI.data[0].url;
+        console.log(imageUrlFromAI.data[0].url);
+
+        //Downloading image to temp.
+        saveImageFromUrlToTemp(url);
+
+        replyMessage.content = imageUrlFromAI.data[0].url;
+        return replyMessage;
+      }
+    } catch (error) {
+      console.error("Błąd przy generowaniu obrazu: " + error);
+    }
+  }
   return replyMessage;
 }
 
