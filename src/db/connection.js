@@ -1,5 +1,5 @@
 const { default: mongoose } = require("mongoose");
-const History = require("./dbmodels/History");
+const History = require("./models/History");
 
 require("dotenv").config();
 
@@ -35,13 +35,6 @@ async function saveMessage(sessionId, role, content) {
     console.error("Error while saving message :", error);
   }
 }
-
-//function tests
-
-// connectToDB().then(async () => {
-//   await saveMessage("12345", "user", "Jak działa mongoDB?");
-//   await saveMessage("12345", "assistant", "Mongdb to naza NoSql..");
-// });
 
 async function readMessages(sessionId) {
   try {

@@ -124,17 +124,12 @@ module.exports = async function processTextAi(
         messages: [
           {
             role: "system",
-            content:
-              "You are chatBot named GrzybekAIbot. Use Polish language apart from generating images . Nie używaj frazy 'Na podstawie wcześniejszych informacji' oraz 'z opisu kótry podałeś'.",
+            content: `You are chatBot named GrzybekAIbot. 
+            Use Polish language. 
+            Nie używaj frazy 'Na podstawie wcześniejszych informacji' oraz 'z opisu, który podałeś'.
+            Odpowiadaj zawsze wyłącznie po polsku, niezależnie od języka zapytania użytkownika. ${imageGenerationPrompt} ${aiAbilitiesPrompt}`,
           },
-          {
-            role: "system",
-            content: aiAbilitiesPrompt,
-          },
-          {
-            role: "system",
-            content: imageGenerationPrompt,
-          },
+
           ...historyMessages,
           { role: "user", content: inputText },
         ],

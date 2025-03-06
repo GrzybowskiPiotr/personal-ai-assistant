@@ -3,7 +3,7 @@ const ffmpegStatic = require("ffmpeg-static");
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
-const cleanTemp = require("./cleanTemp");
+const cleanTemp = require("../files/cleanTemp");
 
 const tempDir = "./temp/audio";
 const outputDir = "./temp/audio/converted_audio";
