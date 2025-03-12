@@ -5,15 +5,99 @@ const tokenUsageOptimization = require("../../utils/openai/tokenUsageOptimizatio
 const fs = require("fs");
 
 class OpenAIService {
-  constructor(apiKey) {
+  constructor(apiKey, webSearchService) {
     if (!apiKey) {
       throw new Error("Missing OpenAI API Key");
     }
+
     this.openai = new OpenAI({ apiKey });
+    this.webSearchService = webSearchService;
+    if (!webSearchService) {
+      throw new Error("Missing Web Search Service");
+    }
   }
 
   async processText(text, history) {
+    console.log("text processing!");
+
+    //Testy Tavily
+
+    const weSearchTriggers = [
+      // Polski
+      "najnowsze",
+      "najnowszy",
+      "najnowsza",
+      "najnowsze informacje",
+      "aktualne",
+      "aktualny",
+      "aktualna",
+      "aktualizacja",
+      "bieżące",
+      "ostatnie",
+      "ostatni",
+      "ostatnia",
+      "ostatnio",
+      "niedawne",
+      "świeże",
+      "nowe",
+      "nowy",
+      "nowa",
+      "nowinki",
+      "co nowego",
+      "breaking news",
+      "wiadomości",
+      "news",
+      "informacje",
+      "zmiany",
+      "update",
+      "zmieniony",
+      "zaktualizowany",
+      "zmienione",
+      "wersja",
+      "najnowsza wersja",
+      "nowa wersja",
+      "premiera",
+      "wydanie",
+      "release",
+      "kurs walut",
+      "prognoza pogody",
+      "ranking",
+      "notowania",
+
+      // English
+      "latest",
+      "latest news",
+      "latest update",
+      "current",
+      "newest",
+      "fresh",
+      "recent",
+      "recent news",
+      "updated",
+      "update",
+      "changes",
+      "modified",
+      "news",
+      "breaking news",
+      "information",
+      "version",
+      "latest version",
+      "new version",
+      "release",
+      "launch",
+      "announcement",
+      "exchange rate",
+      "weather forecast",
+      "ranking",
+      "stock prices",
+    ];
+
+    const webResponse = await this.webSearchService.search(text);
+    console.log(webResponse.results.answer);
+    webResponse.results.results.map((result) => console.log(result));
+
     // Sprawdź, czy to żądanie generowania obrazu
+
     const imageGenerationTriggers = [
       "narysuj",
       "wygeneruj obraz",

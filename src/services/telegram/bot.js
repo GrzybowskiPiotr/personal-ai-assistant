@@ -13,6 +13,7 @@ class TelegramBot {
     if (!openAIService) {
       throw new Error("Missing OpenAI Service");
     }
+
     this.bot = new Telegraf(token);
     this.openAIService = openAIService;
     this.initializeHandlers();
