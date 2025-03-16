@@ -3,10 +3,9 @@ const { MODELS, TOKENS } = require("../../config/constants");
 const { encoding_for_model } = require("@dqbd/tiktoken");
 const tokenUsageOptimization = require("../../utils/openai/tokenUsageOptimization");
 const fs = require("fs");
-const imageGenerationPrompt = require("./prompts/imageGenerationPrompt");
 const aiAbilitiesPrompt = require("./prompts/aiAbilitiesPrompt");
 const initialDescryptionPropmpt = require("./prompts/initialDescryptionPropmpt");
-
+const formatWebSearchResponse = require("../../utils/formatters/formatWebSearchResponse");
 class OpenAIService {
   constructor(apiKey, webSearchService) {
     if (!apiKey) {
@@ -138,7 +137,7 @@ class OpenAIService {
       messages: [
         {
           role: "system",
-          content: `${initialDescryptionPropmpt}${imageGenerationPrompt} ${aiAbilitiesPrompt}`,
+          content: `${initialDescryptionPropmpt}${aiAbilitiesPrompt}`,
         },
         ...optimizedHistory,
         { role: "user", content: text },
@@ -157,11 +156,25 @@ class OpenAIService {
           assistantMessage.tool_calls[0].function.arguments
         );
         if (calledFunctionName === "search_web") {
-          const search_Web_Response = await this.search_web(args);
+          // const search_Web_Response = await this.search_web(args);
+          const formatetResposne = formatWebSearchResponse(
+            await this.search_web(args)
+          );
 
-          //Tu skończyłem dalej do zrobienia jest prezkazanie odpowiedzi do AI
+          //przekazanie odpowiedzi z web_search do modelu aby wykonał podsumowanie i odpowiedział do bot
 
-          console.log(search_Web_Response);
+          const response = await this.openai.chat.completions.create({
+            model: MODELS.OPENAI.CHAT,
+            //Podanie zrfomatowanej odpowiedzi.
+            messages: [
+              {
+                role: "system",
+                content: `Na podstawie poniższych informacji z przeszukania sieci, przygotuj podsumowanie zawierające najważniejsze informacje. Rozpocznij odpowiedź od frazy: "Musiałem to sprawdzić. Dowiedziałem się, że:". Stosuj zwięzły i klarowny język. Oto dane wejściowe:${formatetResposne}.Umieść stopkę oddzieloną od sekcji informacji. W stopce wypowiedzi podaj źródłowy url. Poinformuj urzytkownika, że warto zapoznać się z pełną publikacją.`,
+              },
+            ],
+          });
+
+          return response;
         } else {
           throw new Error(`Wywołanie nieznanej funkcji ${calledFunctionName}`);
         }
