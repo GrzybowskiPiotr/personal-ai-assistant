@@ -17,27 +17,7 @@ class OpenAIService {
     if (!webSearchService) {
       throw new Error("Missing Web Search Service");
     }
-    // this.functionCallConfig = [
-    //   {
-    //     type: "function",
-    //     function: {
-    //       name: "search_web",
-    //       description:
-    //         "Search for the latest information based on user queries",
-    //       parameters: {
-    //         type: "object",
-    //         properties: {
-    //           query: {
-    //             type: "string",
-    //             description: "Zapytanie wyszukiwania, które ma zostać wykonane",
-    //           },
-    //         },
-    //         required: ["query"],
-    //         additionalProperties: false,
-    //       },
-    //     },
-    //   },
-    // ];
+
     this.functionCallConfig = [
       {
         type: "function",
@@ -79,9 +59,7 @@ class OpenAIService {
   }
 
   async processText(text, history) {
-    console.log("text processing!");
-
-    // Sprawdź, czy to żądanie generowania obrazu
+    // Check if this is an image generation request.
     const imageGenerationTriggers = [
       "narysuj",
       "wygeneruj obraz",
@@ -116,11 +94,10 @@ class OpenAIService {
         };
       } catch (error) {
         console.error("Błąd generowania obrazu:", error);
-        // Jeśli generowanie obrazu się nie powiedzie, kontynuuj jako normalną rozmowę
       }
     }
 
-    // Standardowa obsługa tekstu
+    // Standard text handling.
     const tokenizer = encoding_for_model(MODELS.OPENAI.CHAT);
     const optimizedHistory = tokenUsageOptimization(
       history,
@@ -160,7 +137,7 @@ class OpenAIService {
           if (formatetResposne.success) {
             return await this.openai.chat.completions.create({
               model: MODELS.OPENAI.CHAT,
-              //Podanie zrfomatowanej odpowiedzi.
+              //Providing a formatted response.
               messages: [
                 {
                   role: "system",
@@ -171,7 +148,7 @@ class OpenAIService {
           } else {
             return await this.openai.chat.completions.create({
               model: MODELS.OPENAI.CHAT,
-              //Podanie informacji o braku wyników wyszukiwania w sieci.
+              //Providing information about the lack of search results on the web.
               messages: [
                 {
                   role: "system",
@@ -215,7 +192,7 @@ class OpenAIService {
     quality = "standard",
     size = "1024x1024"
   ) {
-    // Przygotuj prompt do generowania obrazu
+    // Prepeare a prompt for image generation.
     const prompt = this._prepareImagePrompt(description);
 
     const response = await this.openai.images.generate({
@@ -229,7 +206,7 @@ class OpenAIService {
   }
 
   _prepareImagePrompt(description) {
-    // Usuń słowa kluczowe związane z generowaniem obrazu
+    // Remove keywords related to image generation.
     const cleanDescription = description
       .toLowerCase()
       .replace(
@@ -238,7 +215,7 @@ class OpenAIService {
       )
       .trim();
 
-    // Dodaj dodatkowe instrukcje dla lepszej jakości
+    // Add additional instructions for better quality.
     return `High quality, detailed image of ${cleanDescription}. Photorealistic, 4K, detailed, sharp focus.`;
   }
 

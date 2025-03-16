@@ -41,7 +41,10 @@ module.exports = class TavilyService {
         results: response.data,
       };
     } catch (error) {
-      console.error("Błąd pobierania wyników wyszukiwania w Tavily: ", error);
+      console.error(
+        "Nie udało się pobrać wyników wyszukiwania z Tavily. Spróbuj ponownie później. Szczegóły błędu:",
+        error
+      );
       return { success: false, error: error.message };
     }
   }
