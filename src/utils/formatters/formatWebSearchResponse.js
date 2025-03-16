@@ -14,7 +14,7 @@ function formatWebSearchResponse(response) {
         })
         .filter((res) => res != undefined);
       const formattedString = `Odpowiedź główna: ${answer} żródła: ${higSocereResponses.join()}`;
-      return formattedString;
+      return { success: response.success, formattedString };
     }
   } catch (error) {
     console.error("Błędny format odpowiedzi z usługi web_Search: " + error);

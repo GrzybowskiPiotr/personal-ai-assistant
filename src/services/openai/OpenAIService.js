@@ -66,12 +66,11 @@ class OpenAIService {
     const { user_query } = query;
     try {
       const webResponse = await this.webSearchService.search(user_query);
+      const success = webResponse.success;
       const answer = webResponse.results.answer;
       const responses = webResponse.results.results;
-      return {
-        answer,
-        responses,
-      };
+
+      return { success, answer, responses };
     } catch (error) {
       console.error(
         "Wystąpił błąd wyszukiwania w sieci web przez Tavily:" + error
@@ -131,7 +130,6 @@ class OpenAIService {
     );
     tokenizer.free();
 
-    // return await this.openai.chat.completions.create({
     const response = await this.openai.chat.completions.create({
       model: MODELS.OPENAI.CHAT,
       messages: [
@@ -156,25 +154,32 @@ class OpenAIService {
           assistantMessage.tool_calls[0].function.arguments
         );
         if (calledFunctionName === "search_web") {
-          // const search_Web_Response = await this.search_web(args);
-          const formatetResposne = formatWebSearchResponse(
-            await this.search_web(args)
-          );
+          const search_Web_Response = await this.search_web(args);
+          const formatetResposne = formatWebSearchResponse(search_Web_Response);
 
-          //przekazanie odpowiedzi z web_search do modelu aby wykonał podsumowanie i odpowiedział do bot
-
-          const response = await this.openai.chat.completions.create({
-            model: MODELS.OPENAI.CHAT,
-            //Podanie zrfomatowanej odpowiedzi.
-            messages: [
-              {
-                role: "system",
-                content: `Na podstawie poniższych informacji z przeszukania sieci, przygotuj podsumowanie zawierające najważniejsze informacje. Rozpocznij odpowiedź od frazy: "Musiałem to sprawdzić. Dowiedziałem się, że:". Stosuj zwięzły i klarowny język. Oto dane wejściowe:${formatetResposne}.Umieść stopkę oddzieloną od sekcji informacji. W stopce wypowiedzi podaj źródłowy url. Poinformuj urzytkownika, że warto zapoznać się z pełną publikacją.`,
-              },
-            ],
-          });
-
-          return response;
+          if (formatetResposne.success) {
+            return await this.openai.chat.completions.create({
+              model: MODELS.OPENAI.CHAT,
+              //Podanie zrfomatowanej odpowiedzi.
+              messages: [
+                {
+                  role: "system",
+                  content: `Na podstawie poniższych informacji z przeszukania sieci, przygotuj podsumowanie zawierające najważniejsze informacje. Rozpocznij odpowiedź od frazy: "Musiałem to sprawdzić. Dowiedziałem się, że:". Stosuj zwięzły i klarowny język. Oto dane wejściowe:${formatetResposne.formattedString}.Umieść stopkę oddzieloną od sekcji informacji. W stopce wypowiedzi podaj źródłowy url. Poinformuj urzytkownika, że warto zapoznać się z pełną publikacją.`,
+                },
+              ],
+            });
+          } else {
+            return await this.openai.chat.completions.create({
+              model: MODELS.OPENAI.CHAT,
+              //Podanie informacji o braku wyników wyszukiwania w sieci.
+              messages: [
+                {
+                  role: "system",
+                  content: `Poinformuj urzytkownika w przyjazny sposób, że nie znalezłeś odpowiedzi w sieci oraz nie masz wiedzy na dany temat`,
+                },
+              ],
+            });
+          }
         } else {
           throw new Error(`Wywołanie nieznanej funkcji ${calledFunctionName}`);
         }
