@@ -2,6 +2,6 @@ FROM node:18-alpine
 WORKDIR /app
 COPY packeage*.json ./
 COPY . .
-RUN npm install --production
+RUN npm install --omit=dev
 EXPOSE 3000
 CMD ["npm", "start"]
