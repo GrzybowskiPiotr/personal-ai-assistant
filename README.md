@@ -14,7 +14,7 @@ This project is about building a personal AI assistant using the OpenAI API. The
    ```bash
    cd personal-ai-assistant
    ```
-3. Create .env file and provied your API peys
+3. Create .env file and provied your API keys
 
 ## Deployment on Render.com
 
