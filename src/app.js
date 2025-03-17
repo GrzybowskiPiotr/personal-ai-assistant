@@ -17,6 +17,8 @@ if (!botApiKey || !openaiKey) {
 const webSearchService = new tavilyService(tavilyApiKey);
 const openAIService = new OpenAIService(openaiKey, webSearchService);
 
+const PORT = process.env.PORT || 3000;
+
 async function startApplication() {
   try {
     // Połączenie z bazą danych
@@ -26,7 +28,7 @@ async function startApplication() {
     const bot = new TelegramBot(botApiKey, openAIService, webSearchService);
     await bot.start();
 
-    console.log("Aplikacja została uruchomiona pomyślnie!");
+    console.log(`Aplikacja została uruchomiona pomyślnie na porcie ${PORT}!`);
   } catch (error) {
     console.error("Błąd podczas uruchamiania aplikacji:", error);
     process.exit(1);
@@ -34,4 +36,8 @@ async function startApplication() {
 }
 
 startApplication();
-console.log("Aplikacja uruchomiona.");
+
+// Dodaj nasłuchiwanie na porcie
+app.listen(PORT, () => {
+  console.log(`Serwer nasłuchuje na porcie ${PORT}`);
+});
