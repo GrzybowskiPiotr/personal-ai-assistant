@@ -2,25 +2,14 @@ const { connectToDB } = require("./db/connection");
 const TelegramBot = require("./services/telegram/bot");
 const OpenAIService = require("./services/openai/OpenAIService");
 const tavilyService = require("./services/tavily/TavilyService");
-
-const express = require("express");
-const app = express();
-const PORT = process.env.PORT || 3000;
+const dummyWorker = require("./dummyWorker");
 
 // Walidacja kluczy API
 const botApiKey = process.env.TELEGRAM_BOT_TOKEN;
 const openaiKey = process.env.OPENAI_API_KEY;
 const tavilyApiKey = process.env.TAVILY_API_KEY;
 //setup dla render szukającego cokolwiek na porcie.
-app.use(express.json());
-app.get("/", (req, res) => {
-  res.send("Worker is running!");
-});
 
-// Uruchomienie serwera
-app.listen(PORT, () => {
-  console.log(`Worker is listening on port ${PORT}`);
-});
 if (!botApiKey || !openaiKey) {
   console.error("Brak wymaganych kluczy API w pliku .env");
   process.exit(1);
@@ -47,3 +36,4 @@ async function startApplication() {
 }
 
 startApplication();
+dummyWorker();
