@@ -2,6 +2,7 @@ const dotenv = require("dotenv");
 const { connectToDB } = require("./db/connection");
 const TelegramBot = require("./services/telegram/bot");
 const OpenAIService = require("./services/openai/OpenAIService");
+const tavilyService = require("./services/tavily/TavilyService");
 
 // Inicjalizacja zmiennych środowiskowych
 const envResult = dotenv.config();
@@ -13,6 +14,7 @@ if (envResult.error) {
 // Walidacja kluczy API
 const botApiKey = process.env.TELEGRAM_BOT_TOKEN;
 const openaiKey = process.env.OPENAI_API_KEY;
+const tavilyApiKey = process.env.TAVILY_API_KEY;
 
 if (!botApiKey || !openaiKey) {
   console.error("Brak wymaganych kluczy API w pliku .env");
@@ -20,7 +22,8 @@ if (!botApiKey || !openaiKey) {
 }
 
 // Inicjalizacja serwisów
-const openAIService = new OpenAIService(openaiKey);
+const webSearchService = new tavilyService(tavilyApiKey);
+const openAIService = new OpenAIService(openaiKey, webSearchService);
 
 async function startApplication() {
   try {
@@ -28,7 +31,7 @@ async function startApplication() {
     await connectToDB();
 
     // Inicjalizacja i uruchomienie bota
-    const bot = new TelegramBot(botApiKey, openAIService);
+    const bot = new TelegramBot(botApiKey, openAIService, webSearchService);
     await bot.start();
 
     console.log("Aplikacja została uruchomiona pomyślnie!");
