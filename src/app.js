@@ -34,3 +34,7 @@ async function startApplication() {
 }
 
 startApplication();
+console.log(
+  "Bot is running on Render: ",
+  process.env.RENDER_DEPLOYMENT || "Local"
+);

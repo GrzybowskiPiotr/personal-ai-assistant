@@ -5,6 +5,7 @@ This project is about building a personal AI assistant using the OpenAI API. The
 ## Setup Instructions
 
 1. Clone the repository:
+
    ```bash
    git clone <repository-url>
    ```
@@ -13,6 +14,16 @@ This project is about building a personal AI assistant using the OpenAI API. The
    ```bash
    cd personal-ai-assistant
    ```
+3. Create .env file and provied your API peys
 
-3. Start coding :-)
+## Deployment on Render.com
 
+This bot is deployed on [Render](https://render.com/).  
+To deploy the bot yourself:
+
+1. Create a Render account.
+2. Link this repository to a new Web Service.
+3. Set up environment variables in the Render dashboard.
+4. Start the service and monitor logs for errors.
+
+Live deployment: **[https://personal-ai-assistant.onrender.com]**
