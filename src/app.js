@@ -36,8 +36,3 @@ async function startApplication() {
 }
 
 startApplication();
-
-// Dodaj nasłuchiwanie na porcie
-app.listen(PORT, () => {
-  console.log(`Serwer nasłuchuje na porcie ${PORT}`);
-});
