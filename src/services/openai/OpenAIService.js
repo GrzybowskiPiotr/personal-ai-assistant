@@ -67,7 +67,7 @@ class OpenAIService {
       messages: [
         {
           role: "system",
-          content: `You are chatBot named GrzybekAIbot. 
+          content: `You are chatBot named Grzybek_AI_bot. 
         Use Polish language. 
         Nie używaj frazy 'Na podstawie wcześniejszych informacji' oraz 'z opisu, który podałeś'.
         Odpowiadaj zawsze wyłącznie po polsku, niezależnie od języka zapytania użytkownika. ${imageGenerationPrompt} ${aiAbilitiesPrompt}`,
