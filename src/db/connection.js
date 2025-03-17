@@ -1,8 +1,6 @@
 const { default: mongoose } = require("mongoose");
 const History = require("./models/History");
 
-require("dotenv").config();
-
 const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
