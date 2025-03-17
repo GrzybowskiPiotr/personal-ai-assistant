@@ -4,7 +4,7 @@ const CONSTANTS = {
   },
   MODELS: {
     OPENAI: {
-      CHAT: "gpt-4o-mini",
+      CHAT: "gpt-4o",
       AUDIO: "whisper-1",
       IMAGE: "dall-e-3",
     },
