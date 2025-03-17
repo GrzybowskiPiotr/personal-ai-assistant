@@ -109,7 +109,17 @@ class OpenAIService {
 
     const response = await this.openai.chat.completions.create({
       model: MODELS.OPENAI.CHAT,
-      messages: [...optimizedHistory, { role: "user", content: text }],
+      messages: [
+        {
+          role: "system",
+          content: `You are chatBot named GrzybekAIbot. 
+        Use Polish language. 
+        Nie używaj frazy 'Na podstawie wcześniejszych informacji' oraz 'z opisu, który podałeś'.
+        Odpowiadaj zawsze wyłącznie po polsku, niezależnie od języka zapytania użytkownika. ${imageGenerationPrompt} ${aiAbilitiesPrompt}`,
+        },
+        ...optimizedHistory,
+        { role: "user", content: text },
+      ],
     });
   }
 
