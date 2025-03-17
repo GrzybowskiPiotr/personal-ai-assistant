@@ -1,15 +1,7 @@
-// const dotenv = require("dotenv");
 const { connectToDB } = require("./db/connection");
 const TelegramBot = require("./services/telegram/bot");
 const OpenAIService = require("./services/openai/OpenAIService");
 const tavilyService = require("./services/tavily/TavilyService");
-
-// Inicjalizacja zmiennych środowiskowych
-// const envResult = dotenv.config();
-// if (envResult.error) {
-//   console.error("Błąd podczas ładowania pliku .env:", envResult.error);
-//   process.exit(1);
-// }
 
 // Walidacja kluczy API
 const botApiKey = process.env.TELEGRAM_BOT_TOKEN;
