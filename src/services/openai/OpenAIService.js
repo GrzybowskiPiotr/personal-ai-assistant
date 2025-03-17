@@ -112,15 +112,62 @@ class OpenAIService {
       messages: [
         {
           role: "system",
-          content: `You are chatBot named GrzybekAIbot. 
-        Use Polish language. 
-        Nie używaj frazy 'Na podstawie wcześniejszych informacji' oraz 'z opisu, który podałeś'.
-        Odpowiadaj zawsze wyłącznie po polsku, niezależnie od języka zapytania użytkownika. ${imageGenerationPrompt} ${aiAbilitiesPrompt}`,
+          content: `${initialDescryptionPropmpt}${aiAbilitiesPrompt}`,
         },
         ...optimizedHistory,
         { role: "user", content: text },
       ],
+      tools: this.functionCallConfig,
     });
+
+    const assistantMessage = response.choices[0].message;
+
+    // Jeśli OpenAI sugeruje wywołanie funkcji
+    if (assistantMessage.tool_calls) {
+      console.log("Wywołanie funkcji");
+      try {
+        const calledFunctionName = assistantMessage.tool_calls[0].function.name;
+        const args = JSON.parse(
+          assistantMessage.tool_calls[0].function.arguments
+        );
+        if (calledFunctionName === "search_web") {
+          const search_Web_Response = await this.search_web(args);
+          const formatetResposne = formatWebSearchResponse(search_Web_Response);
+
+          if (formatetResposne.success) {
+            return await this.openai.chat.completions.create({
+              model: MODELS.OPENAI.CHAT,
+              //Providing a formatted response.
+              messages: [
+                {
+                  role: "system",
+                  content: `Na podstawie poniższych informacji z przeszukania sieci, przygotuj podsumowanie zawierające najważniejsze informacje. Rozpocznij odpowiedź od frazy: "Musiałem to sprawdzić. Dowiedziałem się, że:". Stosuj zwięzły i klarowny język. Oto dane wejściowe:${formatetResposne.formattedString}.Umieść stopkę oddzieloną od sekcji informacji. W stopce wypowiedzi podaj źródłowy url. Poinformuj urzytkownika, że warto zapoznać się z pełną publikacją.`,
+                },
+              ],
+            });
+          } else {
+            return await this.openai.chat.completions.create({
+              model: MODELS.OPENAI.CHAT,
+              //Providing information about the lack of search results on the web.
+              messages: [
+                {
+                  role: "system",
+                  content: `Poinformuj urzytkownika w przyjazny sposób, że nie znalezłeś odpowiedzi w sieci oraz nie masz wiedzy na dany temat`,
+                },
+              ],
+            });
+          }
+        } else {
+          throw new Error(`Wywołanie nieznanej funkcji ${calledFunctionName}`);
+        }
+      } catch (error) {
+        console.error("AI wywołało nieznaną funkcję :" + error);
+      }
+
+      return null;
+    }
+
+    return response;
   }
 
   async processImage(imageUrl, prompt) {
