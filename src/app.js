@@ -2,7 +2,7 @@ const { connectToDB } = require("./db/connection");
 const TelegramBot = require("./services/telegram/bot");
 const OpenAIService = require("./services/openai/OpenAIService");
 const tavilyService = require("./services/tavily/TavilyService");
-const app = require("./app.js");
+
 // Walidacja kluczy API
 const botApiKey = process.env.TELEGRAM_BOT_TOKEN;
 const openaiKey = process.env.OPENAI_API_KEY;
@@ -36,6 +36,4 @@ async function startApplication() {
 }
 
 startApplication();
-app.listen(PORT, () => {
-  console.log(`serwer nasłuchuje na porcie ${PORT}`);
-});
+console.log(`Aplikacja uruchomiona na porcie ${PORT}`);
