@@ -34,3 +34,4 @@ async function startApplication() {
 }
 
 startApplication();
+console.log("Aplikacja uruchomiona.");
